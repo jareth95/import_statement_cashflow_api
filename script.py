@@ -31,7 +31,7 @@ class PDFData:
             for  page  in pdf.pages:
                 text = page.extract_text()
                 for counter, line in enumerate(text.split("\n")):
-                    if 'Card Payment' in line:
+                    if 'Card Payment' in line or 'Bill Payment' in line:
                         line = line.split()
                         if line[0] != 'Card':
                             line_number = counter
