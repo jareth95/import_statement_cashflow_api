@@ -26,7 +26,7 @@ class PDFData:
         self.file = file
 
 
-    def extract_expenses_income(self, extract):
+    def extract_expenses(self, extract):
         extraction = {}
         line_number = 0
         if extract == 'expense':
@@ -76,6 +76,6 @@ class PDFData:
 
 api = CashflowAPI(settings.USERNAME, settings.PASSWORD)
 pdf = PDFData('statements/Statement 15-jul-22 ac 73400867.pdf')
-expenses = pdf.extract_expenses_income('expense')
+expenses = pdf.extract_expenses('expense')
 
 print(api.get_token())
