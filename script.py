@@ -1,6 +1,7 @@
 import requests
 import settings
 import pdfplumber
+from time import strptime
 
 
 class CashflowAPI:
@@ -12,7 +13,7 @@ class CashflowAPI:
 
     def get_token(self):
 
-        url = 'http://127.0.0.1:8000/api-token-auth/'
+        url = 'https://cashflow-manager-26.herokuapp.com/api-token-auth/'
         token_payload = {
             'username': self.username,
             'password': self.password
@@ -20,17 +21,17 @@ class CashflowAPI:
         return requests.request('POST', url, data=token_payload).json()['token']
 
 
-    def create_expense(self, token):
-        url = 'http://127.0.0.1:8000/expenses/api/v1/new/'
+    def create_expense(self, token, amount, category, date, description):
+        url = 'https://cashflow-manager-26.herokuapp.com/expenses/api/v1/new/'
         headers = {
             'Authorization': f'Token {token}' 
         }
         payload = {
-            'owner': 1,
-            'amount': 69,
-            'category': 'Food',
-            'date': '2022-08-05',
-            'description': 'API Test'
+            'owner': token,
+            'amount': amount,
+            'category': category,
+            'date': date,
+            'description': description
             }
         return requests.request('POST', url, headers=headers, data=payload)
 
@@ -48,6 +49,7 @@ class PDFData:
             words = ['Card Payment', 'Bill Payment', 'Direct Debit to']
 
         with pdfplumber.open(self.file) as pdf:
+            year = pdf.pages[0].extract_text().split("\n")[2].split()[-1]
             for  page  in pdf.pages:
                 text = page.extract_text()
                 for counter, line in enumerate(text.split("\n")):
@@ -86,11 +88,24 @@ class PDFData:
                                     extraction[f'{split_line[0]} {split_line[1]}'].append({
                                         ' '.join(line[3:-1]) : line[-1]
                                         })               
-        return extraction
+        return extraction, year
 
 
-api = CashflowAPI(settings.USERNAME, settings.PASSWORD)
-pdf = PDFData('statements/Statement 15-jul-22 ac 73400867.pdf')
-expenses = pdf.extract_expenses('expense')
-token = api.get_token()
-print(api.create_expense(token))
+def export_import_expenses():
+    api = CashflowAPI(settings.USERNAME, settings.PASSWORD)
+    pdf = PDFData('statements/Statement 15-jul-22 ac 73400867.pdf')
+
+    expenses = pdf.extract_expenses('expense')[0]
+    year = pdf.extract_expenses('expense')[1]
+    token = api.get_token()
+    
+    for date in expenses:
+        day = date.split()[0]
+        month = strptime(date.split()[1],'%b').tm_mon
+        for expense in expenses[date]:
+            for expense_name, expense_amount in expense.items():
+                api.create_expense(token, expense_amount, 'statement', f'{year}-{month}-{day}', expense_name)
+        
+
+
+export_import_expenses()
