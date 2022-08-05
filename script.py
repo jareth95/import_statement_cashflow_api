@@ -20,6 +20,21 @@ class CashflowAPI:
         return requests.request('POST', url, data=token_payload).json()['token']
 
 
+    def create_expense(self, token):
+        url = 'http://127.0.0.1:8000/expenses/api/v1/new/'
+        headers = {
+            'Authorization': f'Token {token}' 
+        }
+        payload = {
+            'owner': 1,
+            'amount': 69,
+            'category': 'Food',
+            'date': '2022-08-05',
+            'description': 'API Test'
+            }
+        return requests.request('POST', url, headers=headers, data=payload)
+
+
 class PDFData:
 
     def __init__(self, file):
@@ -77,5 +92,5 @@ class PDFData:
 api = CashflowAPI(settings.USERNAME, settings.PASSWORD)
 pdf = PDFData('statements/Statement 15-jul-22 ac 73400867.pdf')
 expenses = pdf.extract_expenses('expense')
-
-print(api.get_token())
+token = api.get_token()
+print(api.create_expense(token))
